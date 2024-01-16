@@ -1,9 +1,12 @@
 package main
 
 import (
-	"github.com/cybercongress/go-cyber/cmd/iavltool/cmd"
+	"github.com/deep-foundation/deep-chain/cmd/iavltool/cmd"
 )
 
 func main() {
-	cmd.Execute()
+	err := cmd.Execute()
+	if err != nil {
+		return
+	}
 }

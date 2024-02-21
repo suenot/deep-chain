@@ -5,11 +5,12 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	ctypes "github.com/cybercongress/go-cyber/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/cybercongress/go-cyber/x/resources/types"
+	ctypes "github.com/deep-foundation/deep-chain/types"
+
+	"github.com/deep-foundation/deep-chain/x/resources/types"
 )
 
 var _ types.QueryServer = Keeper{}

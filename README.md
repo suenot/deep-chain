@@ -1,3 +1,7 @@
+# DEEPCHAIN
+# DEEP CYBER HACKATHON January 2024
+
+
 # Semantic non-deterministic Superintelligence consensus computer
 # Cyber - SuperIntelligence for The Great Web
 
@@ -123,7 +127,7 @@ make install SOFTWARE_2_ENABLED=false
 - REST: `https://lcd.bostrom.cybernode.ai/rank/parameters`
 - CLI: `... --node=https://rpc.bostrom.cybernode.ai:443`
 - Seed: `d0518ce9881a4b0c5872e5e9b7c4ea8d760dad3f@85.10.207.173:26656`
-- Peers: `5d542c0eb40ae48dc2cac0c140aedb605ded77dc@195.201.105.229:26656,a7226dce9f543a4ecd8db1da2ffd7be05d40d3ad@185.186.208.36:26656,c72de1e20beed51b779d89b1cf08d8146016eec4@185.186.208.37:26656,4c130ed1c58f6d6be981c59a748511e581969c51@93.180.175.201:36656`
+- Peers: `persistent_peers = "3c12fbf6d59a643e3473bda17230b330eb75a9c0@149.102.136.233:26656,527d17ab76851c750430efa27261baff7003293e@95.111.246.10:26656,2d540612c00b15fb50e75b4507f5f0435ca87c11@144.91.127.101:26656"`
 _________________________________________________________
 
 ## IBC

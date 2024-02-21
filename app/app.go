@@ -2,6 +2,16 @@ package app
 
 import (
 	"fmt"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
+	liquidityplugin "github.com/deep-foundation/deep-chain/plugins/liquidity"
+
 	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	authzkeeper "github.com/cosmos/cosmos-sdk/x/authz/keeper"
@@ -19,26 +29,19 @@ import (
 	porttypes "github.com/cosmos/ibc-go/v3/modules/core/05-port/types"
 	ibchost "github.com/cosmos/ibc-go/v3/modules/core/24-host"
 	ibckeeper "github.com/cosmos/ibc-go/v3/modules/core/keeper"
-	_ "github.com/cybercongress/go-cyber/client/docs/statik"
-	"github.com/cybercongress/go-cyber/plugins/liquidity_plugin"
-	"io"
-	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
-	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
-	ctypes "github.com/cybercongress/go-cyber/types"
 	"github.com/gorilla/mux"
 	"github.com/rakyll/statik/fs"
 	"github.com/tendermint/liquidity/x/liquidity"
 	liquiditykeeper "github.com/tendermint/liquidity/x/liquidity/keeper"
 	liquiditytypes "github.com/tendermint/liquidity/x/liquidity/types"
 
-	wasmplugins "github.com/cybercongress/go-cyber/plugins"
-	"github.com/cybercongress/go-cyber/x/dmn"
-	"github.com/cybercongress/go-cyber/x/resources"
+	ctypes "github.com/deep-foundation/deep-chain/types"
+
+	wasmplugins "github.com/deep-foundation/deep-chain/plugins"
+	"github.com/deep-foundation/deep-chain/x/dmn"
+	"github.com/deep-foundation/deep-chain/x/resources"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec/types"
@@ -106,74 +109,68 @@ import (
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/cybercongress/go-cyber/utils"
-	"github.com/cybercongress/go-cyber/x/bandwidth"
-	"github.com/cybercongress/go-cyber/x/cyberbank"
-	cyberbankkeeper "github.com/cybercongress/go-cyber/x/cyberbank/keeper"
-	cyberbanktypes "github.com/cybercongress/go-cyber/x/cyberbank/types"
-	"github.com/cybercongress/go-cyber/x/graph"
+	"github.com/deep-foundation/deep-chain/utils"
+	"github.com/deep-foundation/deep-chain/x/bandwidth"
+	"github.com/deep-foundation/deep-chain/x/cyberbank"
+	cyberbankkeeper "github.com/deep-foundation/deep-chain/x/cyberbank/keeper"
+	cyberbanktypes "github.com/deep-foundation/deep-chain/x/cyberbank/types"
+	"github.com/deep-foundation/deep-chain/x/graph"
 
-	bandwidthkeeper "github.com/cybercongress/go-cyber/x/bandwidth/keeper"
-	bandwidthtypes "github.com/cybercongress/go-cyber/x/bandwidth/types"
-	graphkeeper "github.com/cybercongress/go-cyber/x/graph/keeper"
-	graphtypes "github.com/cybercongress/go-cyber/x/graph/types"
-	"github.com/cybercongress/go-cyber/x/rank"
-	rankkeeper "github.com/cybercongress/go-cyber/x/rank/keeper"
-	ranktypes "github.com/cybercongress/go-cyber/x/rank/types"
+	bandwidthkeeper "github.com/deep-foundation/deep-chain/x/bandwidth/keeper"
+	bandwidthtypes "github.com/deep-foundation/deep-chain/x/bandwidth/types"
+	graphkeeper "github.com/deep-foundation/deep-chain/x/graph/keeper"
+	graphtypes "github.com/deep-foundation/deep-chain/x/graph/types"
+	"github.com/deep-foundation/deep-chain/x/rank"
+	rankkeeper "github.com/deep-foundation/deep-chain/x/rank/keeper"
+	ranktypes "github.com/deep-foundation/deep-chain/x/rank/types"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmclient "github.com/CosmWasm/wasmd/x/wasm/client"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 
-	bandwidthwasm "github.com/cybercongress/go-cyber/x/bandwidth/wasm"
-	dmnwasm "github.com/cybercongress/go-cyber/x/dmn/wasm"
-	graphwasm "github.com/cybercongress/go-cyber/x/graph/wasm"
-	gridwasm "github.com/cybercongress/go-cyber/x/grid/wasm"
-	rankwasm "github.com/cybercongress/go-cyber/x/rank/wasm"
-	resourceswasm "github.com/cybercongress/go-cyber/x/resources/wasm"
+	bandwidthwasm "github.com/deep-foundation/deep-chain/x/bandwidth/wasm"
+	dmnwasm "github.com/deep-foundation/deep-chain/x/dmn/wasm"
+	graphwasm "github.com/deep-foundation/deep-chain/x/graph/wasm"
+	gridwasm "github.com/deep-foundation/deep-chain/x/grid/wasm"
+	rankwasm "github.com/deep-foundation/deep-chain/x/rank/wasm"
+	resourceswasm "github.com/deep-foundation/deep-chain/x/resources/wasm"
 
-	grid "github.com/cybercongress/go-cyber/x/grid"
-	gridkeeper "github.com/cybercongress/go-cyber/x/grid/keeper"
-	gridtypes "github.com/cybercongress/go-cyber/x/grid/types"
+	grid "github.com/deep-foundation/deep-chain/x/grid"
+	gridkeeper "github.com/deep-foundation/deep-chain/x/grid/keeper"
+	gridtypes "github.com/deep-foundation/deep-chain/x/grid/types"
 
-	dmnkeeper "github.com/cybercongress/go-cyber/x/dmn/keeper"
-	dmntypes "github.com/cybercongress/go-cyber/x/dmn/types"
+	dmnkeeper "github.com/deep-foundation/deep-chain/x/dmn/keeper"
+	dmntypes "github.com/deep-foundation/deep-chain/x/dmn/types"
 
-	resourceskeeper "github.com/cybercongress/go-cyber/x/resources/keeper"
-	resourcestypes "github.com/cybercongress/go-cyber/x/resources/types"
-	stakingwrap "github.com/cybercongress/go-cyber/x/staking"
+	resourceskeeper "github.com/deep-foundation/deep-chain/x/resources/keeper"
+	resourcestypes "github.com/deep-foundation/deep-chain/x/resources/types"
+	stakingwrap "github.com/deep-foundation/deep-chain/x/staking"
 
-	"github.com/cybercongress/go-cyber/app/params"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 
-	store "github.com/cosmos/cosmos-sdk/store/types"
+	"github.com/deep-foundation/deep-chain/app/params"
 )
 
 const (
-	appName = "BostromHub"
-	upgradeName = "cyberfrey"
+	appName = "deepchain"
 )
 
 // We pull these out so we can set them with LDFLAGS in the Makefile
 var (
-	NodeDir      = ".cyber"
-	Bech32Prefix = "bostrom"
-
-	// TODO clean
-	// DefaultBondDenom is the denomination of coin to use for bond/staking
-	DefaultBondDenom = "boot"
-	// DefaultFeeDenom is the denomination of coin to use for fees
-	DefaultFeeDenom = "boot"
-	// DefaultReDnmString is the allowed denom regex expression
-	DefaultReDnmString = `[a-zA-Z][a-zA-Z0-9/\-\.]{2,127}`
+	NodeDir      = ".deepchain"
+	Bech32Prefix = "deep"
 
 	// If EnabledSpecificProposals is "", and this is "true", then enable all x/wasm proposals.
-	ProposalsEnabled = "true"
+	ProposalsEnabled        = "true"
 	EnableSpecificProposals = ""
 )
 
+func overrideWasmVariables() {
+	wasmtypes.MaxWasmSize = 2 * 1024 * 1024
+}
+
 // GetEnabledProposals parses the ProposalsEnabled / EnableSpecificProposals values to
-// produce a list of enabled proposals to pass into cyber app.
+// produce a list of enabled proposals to pass into deepchain app.
 func GetEnabledProposals() []wasm.ProposalType {
 	if EnableSpecificProposals == "" {
 		if ProposalsEnabled == "true" {
@@ -255,7 +252,7 @@ var (
 		resourcestypes.ResourcesName:   {authtypes.Minter, authtypes.Burner},
 	}
 
-    // module accounts that are allowed to receive tokens
+	// module accounts that are allowed to receive tokens
 	allowedReceivingModAcc = map[string]bool{
 		distrtypes.ModuleName: true,
 	}
@@ -265,12 +262,6 @@ var (
 	_ CosmosApp               = (*App)(nil)
 	_ servertypes.Application = (*App)(nil)
 )
-
-// TODO clean
-// SdkCoinDenomRegex returns a new sdk base denom regex string
-func SdkCoinDenomRegex() string {
-	return DefaultReDnmString
-}
 
 // App extended ABCI application
 // TODO rename to CyberApp
@@ -307,14 +298,14 @@ type App struct {
 	WasmKeeper       wasm.Keeper
 	LiquidityKeeper  liquiditykeeper.Keeper
 
-	BandwidthMeter   *bandwidthkeeper.BandwidthMeter
-	CyberbankKeeper  *cyberbankkeeper.IndexedKeeper
-	GraphKeeper      *graphkeeper.GraphKeeper
-	IndexKeeper      *graphkeeper.IndexKeeper
-	RankKeeper 		 *rankkeeper.StateKeeper
-	GridKeeper 		 gridkeeper.Keeper
-	DmnKeeper  		 *dmnkeeper.Keeper
-	ResourcesKeeper  resourceskeeper.Keeper
+	BandwidthMeter  *bandwidthkeeper.BandwidthMeter
+	CyberbankKeeper *cyberbankkeeper.IndexedKeeper
+	GraphKeeper     *graphkeeper.GraphKeeper
+	IndexKeeper     *graphkeeper.IndexKeeper
+	RankKeeper      *rankkeeper.StateKeeper
+	GridKeeper      gridkeeper.Keeper
+	DmnKeeper       *dmnkeeper.Keeper
+	ResourcesKeeper resourceskeeper.Keeper
 
 	// make scoped keepers public for test purposes
 	ScopedIBCKeeper      capabilitykeeper.ScopedKeeper
@@ -343,9 +334,9 @@ func NewApp(
 	baseAppOptions ...func(*baseapp.BaseApp),
 ) *App {
 	// TODO clean
-	//config := sdk.NewConfig()
-	//config.Seal()
-
+	// config := sdk.NewConfig()
+	// config.Seal()
+	overrideWasmVariables()
 	appCodec, legacyAmino := encodingConfig.Marshaler, encodingConfig.Amino
 	interfaceRegistry := encodingConfig.InterfaceRegistry
 
@@ -354,7 +345,7 @@ func NewApp(
 	bApp.SetVersion(version.Version)
 	bApp.SetInterfaceRegistry(interfaceRegistry)
 	// TODO clean
-	//sdk.SetCoinDenomRegex(SdkCoinDenomRegex)
+	// sdk.SetCoinDenomRegex(SdkCoinDenomRegex)
 
 	keys := sdk.NewKVStoreKeys(
 		authtypes.StoreKey, banktypes.StoreKey, stakingtypes.StoreKey,
@@ -604,7 +595,7 @@ func NewApp(
 		wasmplugins.WasmQueryRouteDmn:       dmnwasm.NewWasmQuerier(*app.DmnKeeper),
 		wasmplugins.WasmQueryRouteGrid:      gridwasm.NewWasmQuerier(app.GridKeeper),
 		wasmplugins.WasmQueryRouteBandwidth: bandwidthwasm.NewWasmQuerier(app.BandwidthMeter),
-		wasmplugins.WasmQueryRouteLiquidity: liquidity_plugin.NewWasmQuerier(app.LiquidityKeeper),
+		wasmplugins.WasmQueryRouteLiquidity: liquidityplugin.NewWasmQuerier(app.LiquidityKeeper),
 	}
 	querier.Queriers = queries
 	queryPlugins := &wasm.QueryPlugins{
@@ -618,7 +609,7 @@ func NewApp(
 		wasmplugins.WasmMsgParserRouteDmn:       dmnwasm.NewWasmMsgParser(),
 		wasmplugins.WasmMsgParserRouteGrid:      gridwasm.NewWasmMsgParser(),
 		wasmplugins.WasmMsgParserRouteResources: resourceswasm.NewWasmMsgParser(),
-		wasmplugins.WasmMsgParserLiquidity:      liquidity_plugin.NewWasmMsgParser(),
+		wasmplugins.WasmMsgParserLiquidity:      liquidityplugin.NewWasmMsgParser(),
 	}
 	parser.Parsers = parsers
 	customEncoders := &wasm.MessageEncoders{
@@ -699,7 +690,7 @@ func NewApp(
 
 	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment
 	// we prefer to be more strict in what arguments the modules expect.
-	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
+	skipGenesisInvariants := cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
@@ -863,7 +854,7 @@ func NewApp(
 	// migration wouldn't be called because bank's consensus version is 2
 	m := bankkeeper.NewMigrator(app.BankKeeper.(bankkeeper.BaseKeeper))
 	// TODO check current bank migrations
-	app.configurator.RegisterMigration(banktypes.ModuleName, 1, m.Migrate1to2)
+	app.configurator.RegisterMigration(banktypes.ModuleName, 1, m.Migrate1to2) //nolint:errcheck
 
 	// initialize stores
 	app.MountKVStores(keys)
@@ -880,9 +871,9 @@ func NewApp(
 				SignModeHandler: encodingConfig.TxConfig.SignModeHandler(),
 				SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
 			},
-			IBCKeeper:    		 app.IBCKeeper,
-			WasmConfig:        	 &wasmConfig,
-			TXCounterStoreKey:   keys[wasm.StoreKey],
+			IBCKeeper:         app.IBCKeeper,
+			WasmConfig:        &wasmConfig,
+			TXCounterStoreKey: keys[wasm.StoreKey],
 		},
 	)
 	if err != nil {
@@ -893,30 +884,6 @@ func NewApp(
 	app.SetInitChainer(app.InitChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetEndBlocker(app.EndBlocker)
-
-	// UPGRADES HANDLER SECTION
-	app.UpgradeKeeper.SetUpgradeHandler(
-		upgradeName,
-		func(ctx sdk.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
-
-			//ctx.Logger().Info("start to init module...")
-			//ctx.Logger().Info("start to run module migrations...")
-
-			return app.mm.RunMigrations(ctx, app.configurator, fromVM)
-		},
-	)
-
-	upgradeInfo, err := app.UpgradeKeeper.ReadUpgradeInfoFromDisk()
-	if err != nil {
-		panic(fmt.Sprintf("failed to read upgrade info from disk %s", err))
-	}
-
-	if upgradeInfo.Name == upgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
-		storeUpgrades := store.StoreUpgrades{}
-
-		// configure store loader that checks if version == upgradeHeight and applies store upgrades
-		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
-	}
 
 	app.ScopedIBCKeeper = scopedIBCKeeper
 	app.ScopedTransferKeeper = scopedTransferKeeper

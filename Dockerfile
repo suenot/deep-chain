@@ -85,7 +85,7 @@ RUN apt-get -y install --no-install-recommends \
 WORKDIR /
 COPY start_script.sh start_script.sh
 COPY entrypoint.sh /entrypoint.sh
-RUN wget -O /genesis.json https://gist.githubusercontent.com/suenot/5c36ac9e418682bfcf1323b61e8445a7/raw/c400a44ae1e5cc8cf162d14425e74e549402aa8c/genesis.json \
+RUN wget -O /genesis.json https://raw.githubusercontent.com/deep-foundation/deep-chain/main/genesis.json \
 && chmod +x start_script.sh \
 && chmod +x /entrypoint.sh \
 && deepchain version
